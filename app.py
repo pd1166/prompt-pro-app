@@ -8,68 +8,74 @@ from datetime import datetime
 # 1. הגדרות תצורה
 # ==========================================
 st.set_page_config(
-    page_title="Prompt Engineer Pro V12",
+    page_title="Prompt Engineer Pro V13",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. תיקון עיצוב וצבעים (Colors & Layout Fix)
+# 2. תיקון עיצוב (Mobile Safe Padding)
 # ==========================================
 st.markdown("""
     <style>
-        /* --- תיקון פריסה (Layout) --- */
-        .stApp { direction: ltr; background-color: #FAFAFA; }
-        
-        /* --- תיקון צבעים קריטי (Color Fix) --- */
-        /* מכריח את כל הטקסטים להיות כהים כדי שיראו אותם על הרקע הלבן */
-        .stApp, .element-container, .stMarkdown, h1, h2, h3, h4, h5, h6, p, div, span {
-            color: #212121 !important; /* שחור כהה */
-            direction: rtl; 
-            text-align: right;
+        /* --- הגדרות בסיס --- */
+        .stApp { 
+            direction: ltr; 
+            background-color: #FAFAFA; 
         }
         
-        /* --- תיקון שדות קלט --- */
+        /* --- תיקון המרחב הראשי (מונע חיתוך בצדדים) --- */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100%;
+        }
+
+        /* --- עיצוב טקסטים (כהה ויישור לימין) --- */
+        .stMarkdown, h1, h2, h3, h4, h5, h6, p, div, span {
+            color: #212121 !important;
+            direction: rtl; 
+            text-align: right;
+            word-wrap: break-word; /* מונע שבירת מילים החוצה */
+        }
+        
+        /* --- כותרת ראשית (יישור למרכז במובייל כדי לא להיחתך) --- */
+        h1 {
+            text-align: center !important;
+            font-size: 2.5rem !important;
+        }
+        
+        /* --- שדות קלט --- */
         .stTextInput input, .stTextArea textarea { 
             direction: rtl; 
             text-align: right; 
-            background-color: #FFFFFF !important; /* רקע לבן */
-            color: #000000 !important; /* טקסט שחור */
-            border: 1px solid #E0E0E0;
-        }
-        
-        /* --- תיקון תפריטים --- */
-        .stSelectbox div[data-baseweb="select"] > div { 
-            direction: rtl; 
-            text-align: right;
+            background-color: #FFFFFF !important;
             color: #000000 !important;
+            border: 1px solid #ccc;
+            border-radius: 8px;
         }
         
-        /* --- יישור סרגל צד --- */
+        /* --- סרגל צד --- */
         section[data-testid="stSidebar"] > div { 
             direction: rtl; 
             text-align: right; 
             background-color: #F0F2F6;
         }
-        section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
-            color: #212121 !important;
-        }
         
-        /* --- כפתור ראשי --- */
+        /* --- כפתור --- */
         .stButton button { 
             width: 100%; 
             border-radius: 12px; 
             height: 55px; 
             font-weight: bold; 
-            font-size: 18px;
             background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); 
-            color: white !important; /* טקסט לבן בכפתור */
+            color: white !important;
             border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
-        /* הסתרת רכיבים מיותרים */
         #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
@@ -123,11 +129,7 @@ def get_api_key():
     except: return ""
 
 def get_working_model():
-    try:
-        # בדיקה מהירה ללא קריאה כבדה לרשת
-        return 'gemini-1.5-flash'
-    except:
-        return 'gemini-pro'
+    return 'gemini-1.5-flash'
 
 def clean_response(text):
     return text.replace("undefined", "").replace("null", "").strip()
@@ -182,8 +184,9 @@ with st.sidebar:
             st.text(f"🕒 {item['time']}")
             st.code(item['prompt'][:40] + "...", language="markdown")
 
-st.title("Prompt Pro V12 🧠")
-st.markdown("##### מחולל פרומפטים חכם")
+# כותרת ממורכזת כדי לא להיחתך
+st.title("Prompt Pro V13 🧠")
+st.markdown("<h5 style='text-align: center;'>מחולל פרומפטים חכם</h5>", unsafe_allow_html=True)
 
 user_input = st.text_area("מה המשימה שלך?", height=100, placeholder="למשל: פוסט לינקדאין על AI...")
 
@@ -191,31 +194,22 @@ if st.button("צור פרומפט מנצח 🚀"):
     if not api_key or not user_input:
         st.error("חסר מפתח או טקסט")
     else:
-        # --- אינדיקציה ויזואלית לחשיבה ---
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        status_text.text("🔄 מתחבר למוח המלאכותי...")
-        time.sleep(0.5) # השהייה קטנה לאפקט
+        status_text.text("🔄 מתחבר...")
+        time.sleep(0.3)
         progress_bar.progress(30)
         
-        status_text.text("⚡ מנתח את הבקשה ובונה אסטרטגיה...")
-        
-        # ביצוע הפעולה האמיתית
         result, used_model = generate_smart_prompt(api_key, user_input, selected_context, selected_tone)
         
-        progress_bar.progress(80)
-        status_text.text("📝 מנסח את הפרומפט הסופי...")
-        time.sleep(0.3)
-        
         progress_bar.progress(100)
-        time.sleep(0.2)
-        progress_bar.empty() # ניקוי הפס בסיום
+        time.sleep(0.1)
+        progress_bar.empty()
         status_text.empty()
-        # ----------------------------------
 
         if result == "QUOTA_ERROR":
-            st.warning("⚠️ עומס רגעי על המודל. אנא נסה שוב בעוד דקה.")
+            st.warning("⚠️ עומס רגעי. נסה שוב עוד רגע.")
         elif "Error" in result:
             st.error(f"שגיאה: {result}")
         else:
@@ -225,7 +219,7 @@ if st.button("צור פרומפט מנצח 🚀"):
             
             add_to_history(user_input, prompt_content, analysis_content, used_model)
             
-            st.success(f"הפרומפט מוכן! (מודל: {used_model})")
+            st.success(f"הפרומפט מוכן!")
             st.code(prompt_content.strip(), language="markdown")
             
             url, label = get_model_link_button(analysis_content)

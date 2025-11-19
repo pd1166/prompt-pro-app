@@ -5,66 +5,65 @@ import pandas as pd
 from datetime import datetime
 
 # ==========================================
-# 1. הגדרות תצורה (Configuration)
+# 1. הגדרות תצורה
 # ==========================================
 st.set_page_config(
-    page_title="Prompt Engineer Pro V9",
-    page_icon="📱",
+    page_title="Prompt Engineer Pro V10",
+    page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="collapsed" # שינוי: סרגל צד סגור בהתחלה למובייל
+    initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. תיקון CSS למובייל (Mobile Fix)
+# 2. תיקון CSS "כירורגי" (Surgical Fix)
 # ==========================================
 st.markdown("""
     <style>
-        /* צבע רקע כללי */
-        .stApp { 
-            background-color: #FAFAFA; 
+        /* משאירים את המעטפת הראשית רגילה כדי לא לשבור את העימוד */
+        .stApp {
+            direction: ltr; 
+            background-color: #FAFAFA;
         }
         
-        /* יישור טקסט לימין - לכל הכותרות והפסקאות */
-        h1, h2, h3, h4, h5, h6, p, .stMarkdown, .stText, span, div {
-            text-align: right;
-            direction: rtl;
-        }
-        
-        /* תיקון ספציפי לשדות קלט - שלא ישברו */
-        .stTextInput, .stTextArea, .stSelectbox {
+        /* הופכים רק את הטקסטים הפנימיים */
+        .element-container, .stMarkdown, h1, h2, h3, h4, h5, h6, p {
             direction: rtl;
             text-align: right;
         }
         
-        /* יישור טקסט בתוך השדות עצמם */
+        /* תיקון ספציפי לשדות קלט */
         .stTextInput input, .stTextArea textarea {
-            direction: rtl; 
-            text-align: right;
-        }
-
-        /* סרגל צד - יישור לימין */
-        section[data-testid="stSidebar"] {
             direction: rtl;
             text-align: right;
-            background-color: #F0F2F6;
         }
-
-        /* כפתור ראשי - עיצוב נקי */
+        
+        /* יישור תפריטים נפתחים */
+        .stSelectbox div[data-baseweb="select"] > div {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        /* יישור סרגל צד */
+        section[data-testid="stSidebar"] > div {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        /* כפתור ראשי */
         .stButton button { 
-            width: 100%; 
-            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-            color: white; 
-            font-weight: bold; 
-            border-radius: 12px; 
-            height: 55px; 
-            font-size: 18px; 
+            width: 100%;
+            border-radius: 10px;
+            height: 50px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #4B4BFF 0%, #0068C9 100%);
+            color: white;
             border: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* הסתרת אלמנטים מיותרים של Streamlit */
+        /* הסתרת רכיבים מיותרים */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
+        header {visibility: hidden;} /* מסתיר את הפס הצבעוני למעלה שנתקע */
         
     </style>
 """, unsafe_allow_html=True)
@@ -89,11 +88,11 @@ def add_to_history(original_request, refined_prompt, model_rec, used_model):
 # 4. לוגיקה עסקית
 # ==========================================
 CONTEXT_LOGIC = {
-    "שיווק וקופירייטינג": "Expert Copywriter. Focus: Psychology, Virality, Hooks.",
-    "כתיבת קוד ופיתוח": "Senior Software Architect. Focus: Clean Code, Security.",
-    "כתיבה יוצרת": "Best-Selling Author. Focus: Narrative depth, Storytelling.",
-    "אסטרטגיה עסקית": "MBB Consultant. Focus: ROI, Market Analysis.",
-    "כללי/אחר": "Expert Prompt Engineer. Focus: Clarity, Structure."
+    "שיווק וקופירייטינג": "Expert Copywriter. Focus: Psychology, Virality.",
+    "כתיבת קוד ופיתוח": "Software Architect. Focus: Clean Code, Security.",
+    "כתיבה יוצרת": "Storyteller. Focus: Narrative depth.",
+    "אסטרטגיה עסקית": "Consultant. Focus: Growth, ROI.",
+    "כללי/אחר": "Prompt Engineer. Focus: Clarity."
 }
 
 MODEL_LINKS = {
@@ -118,11 +117,8 @@ def get_api_key():
     except: return ""
 
 def get_safe_model():
-    try:
-        # ניסיון מהיר ל-Flash
-        return 'gemini-1.5-flash'
-    except:
-        return 'gemini-pro'
+    try: return 'gemini-1.5-flash'
+    except: return 'gemini-pro'
 
 def clean_response(text):
     return text.replace("undefined", "").replace("null", "").strip()
@@ -140,7 +136,7 @@ def generate_smart_prompt(api_key, raw_input, context_key, tone):
         TASK:
         1. Write an expert prompt in Hebrew.
         2. Recommend best AI model (Claude/GPT/Gemini).
-        OUTPUT:
+        OUTPUT FORMAT:
         ---DIVIDER---
         [Hebrew Prompt]
         ---DIVIDER---
@@ -154,7 +150,7 @@ def generate_smart_prompt(api_key, raw_input, context_key, tone):
         return f"Error: {str(e)}", ""
 
 # ==========================================
-# 5. ממשק משתמש (UI)
+# 5. ממשק משתמש
 # ==========================================
 saved_key = get_api_key()
 
@@ -162,7 +158,7 @@ saved_key = get_api_key()
 with st.sidebar:
     st.title("⚙️ הגדרות")
     if saved_key:
-        st.success("מפתח מחובר ✅")
+        st.success("המפתח מחובר")
         api_key = saved_key
     else:
         api_key = st.text_input("מפתח API", type="password")
@@ -171,26 +167,28 @@ with st.sidebar:
     selected_tone = st.select_slider("טון:", ["רשמי", "ישיר", "יצירתי", "שיווקי"], value="רשמי")
     
     st.markdown("---")
-    st.caption("היסטוריה:")
-    for item in st.session_state.history[:5]: # מציג רק את ה-5 האחרונים כדי לא להעמיס
-        with st.expander(f"{item['time']} - {item['original'][:15]}..."):
-            st.code(item['prompt'])
+    # היסטוריה מקוצרת
+    if st.session_state.history:
+        st.caption("היסטוריה:")
+        for item in st.session_state.history[:3]:
+            st.text(f"🕒 {item['time']}")
+            st.code(item['prompt'][:50] + "...", language="markdown")
 
 # מסך ראשי
-st.title("Prompt Pro V9 📱")
-st.markdown("### מחולל פרומפטים מותאם למובייל")
+st.title("Prompt Pro V10 🎯")
+st.markdown("##### מחולל פרומפטים מקצועי (גרסה יציבה)")
 
-user_input = st.text_area("מה המשימה?", height=100, placeholder="למשל: פוסט לפייסבוק על...")
+user_input = st.text_area("מה המשימה שלך?", height=100, placeholder="למשל: פוסט לינקדאין על AI...")
 
 if st.button("צור פרומפט 🚀"):
     if not api_key or not user_input:
         st.error("חסר מפתח או טקסט")
     else:
-        with st.spinner("חושב..."):
+        with st.spinner("מעבד..."):
             result, used_model = generate_smart_prompt(api_key, user_input, selected_context, selected_tone)
             
             if result == "QUOTA_ERROR":
-                st.error("עומס על המערכת, נסה עוד דקה.")
+                st.warning("עומס רגעי, נסה שוב.")
             elif "Error" in result:
                 st.error(result)
             else:

@@ -8,74 +8,78 @@ from datetime import datetime
 # 1. הגדרות תצורה
 # ==========================================
 st.set_page_config(
-    page_title="Prompt Engineer Pro V15",
+    page_title="Prompt Engineer Pro V16",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. עיצוב (Layout Fix)
+# 2. תיקון עיצוב בטוח (Safe Mobile CSS)
 # ==========================================
 st.markdown("""
     <style>
-        /* --- הגדרות בסיס --- */
-        .stApp { 
-            direction: ltr; 
-            background-color: #FAFAFA; 
-        }
-        
-        /* --- מניעת חיתוך בצדדים --- */
-        .block-container {
-            padding-top: 2rem !important;
-            padding-bottom: 2rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            max-width: 100%;
+        /* משאירים את המבנה הראשי LTR כדי לא לשבור את הגריד */
+        .stApp {
+            direction: ltr;
+            background-color: #FAFAFA;
         }
 
-        /* --- עיצוב טקסטים (כהה ויישור לימין) --- */
-        .stMarkdown, h1, h2, h3, h4, h5, h6, p, div, span {
+        /* --- טיפול בטקסטים בלבד --- */
+        /* מיישרים לימין רק אלמנטים של טקסט, לא קופסאות מבנה */
+        .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, 
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6, .stMarkdown li, .stMarkdown span {
+            direction: rtl !important;
+            text-align: right !important;
             color: #212121 !important;
-            direction: rtl; 
-            text-align: right;
-            word-wrap: break-word;
         }
         
-        /* --- כותרת ראשית ממוקמת במרכז --- */
+        /* כותרת ראשית - מרכז */
         h1 {
             text-align: center !important;
         }
-        
+
         /* --- שדות קלט --- */
-        .stTextInput input, .stTextArea textarea { 
-            direction: rtl; 
-            text-align: right; 
-            background-color: #FFFFFF !important;
+        /* בתוך השדה הטקסט יהיה מימין, אבל השדה עצמו יישאר במקום */
+        .stTextInput input, .stTextArea textarea {
+            direction: rtl !important;
+            text-align: right !important;
             color: #000000 !important;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+            background-color: #FFFFFF !important;
         }
         
+        /* --- תפריטים --- */
+        .stSelectbox div[data-baseweb="select"] > div {
+            direction: rtl !important;
+            text-align: right !important;
+            color: #000000 !important;
+        }
+
         /* --- סרגל צד --- */
-        section[data-testid="stSidebar"] > div { 
+        section[data-testid="stSidebar"] {
             direction: rtl; 
-            text-align: right; 
-            background-color: #F0F2F6;
+            text-align: right;
         }
-        
+        section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span {
+             direction: rtl !important;
+             text-align: right !important;
+        }
+
         /* --- כפתור --- */
-        .stButton button { 
-            width: 100%; 
-            border-radius: 12px; 
-            height: 55px; 
-            font-weight: bold; 
-            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); 
+        .stButton button {
+            width: 100%;
+            border-radius: 12px;
+            height: 55px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
             color: white !important;
             border: none;
         }
-        
-        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+
+        /* הסתרת אלמנטים מיותרים */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -96,7 +100,7 @@ def add_to_history(original_request, refined_prompt, model_rec, used_model):
     })
 
 # ==========================================
-# 4. לוגיקה עסקית + בחירת מודל חכמה (החזרנו את זה!)
+# 4. לוגיקה עסקית + בחירת מודל חכמה
 # ==========================================
 CONTEXT_LOGIC = {
     "שיווק וקופירייטינג": "Expert Copywriter. Focus: Psychology, Virality.",
@@ -130,32 +134,19 @@ def get_api_key():
 def get_working_model():
     """
     פונקציה חכמה שבודקת איזה מודל באמת קיים בחשבון
-    ולא מנחשת שמות. (שוחזר מגרסה V11)
     """
     try:
-        # 1. בקשת רשימת המודלים מהשרת
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
-        # 2. חיפוש לפי סדר עדיפויות
-        # עדיפות ראשונה: פלאש 1.5 (מהיר וזול)
         for m in models:
             if 'gemini-1.5-flash' in m: return m
-            
-        # עדיפות שניה: פרו 1.5 (חזק)
         for m in models:
             if 'gemini-1.5-pro' in m: return m
-            
-        # עדיפות שלישית: פרו רגיל (ישן וטוב)
         for m in models:
             if 'gemini-pro' in m: return m
-            
-        # אם לא מצאנו כלום מהמוכרים, נחזיר את הראשון ברשימה
-        if models:
-            return models[0]
-            
-        return 'gemini-1.5-flash' # ברירת מחדל למקרה קיצון
+        if models: return models[0]
+        return 'gemini-1.5-flash'
     except:
-        return 'gemini-pro' # Fallback אחרון בהחלט
+        return 'gemini-pro'
 
 def clean_response(text):
     return text.replace("undefined", "").replace("null", "").strip()
@@ -163,11 +154,8 @@ def clean_response(text):
 def generate_smart_prompt(api_key, raw_input, context_key, tone):
     try:
         genai.configure(api_key=api_key.strip())
-        
-        # שימוש בפונקציה החכמה במקום שם קבוע
         model_name = get_working_model()
         model = genai.GenerativeModel(model_name)
-        
         specific_logic = CONTEXT_LOGIC.get(context_key, CONTEXT_LOGIC["כללי/אחר"])
 
         full_query = f"""
@@ -213,7 +201,7 @@ with st.sidebar:
             st.code(item['prompt'][:40] + "...", language="markdown")
 
 # כותרת ממורכזת
-st.markdown("<h1 style='text-align: center;'>Prompt Pro V15 🧠</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>Prompt Pro V16 🧠</h1>", unsafe_allow_html=True)
 st.markdown("<h5 style='text-align: center;'>מחולל פרומפטים חכם</h5>", unsafe_allow_html=True)
 
 user_input = st.text_area("מה המשימה שלך?", height=100, placeholder="למשל: פוסט לינקדאין על AI...")
@@ -222,6 +210,7 @@ if st.button("צור פרומפט מנצח 🚀"):
     if not api_key or not user_input:
         st.error("חסר מפתח או טקסט")
     else:
+        # אינדיקציה לחשיבה
         progress_bar = st.progress(0)
         status_text = st.empty()
         
@@ -240,7 +229,6 @@ if st.button("צור פרומפט מנצח 🚀"):
             st.warning("⚠️ עומס רגעי. נסה שוב עוד רגע.")
         elif "Error" in result:
             st.error(f"שגיאה: {result}")
-            st.info("נסה ליצור מפתח API חדש ב-Google AI Studio אם זה נמשך.")
         else:
             parts = result.split("---DIVIDER---")
             prompt_content = parts[1] if len(parts) > 1 else result

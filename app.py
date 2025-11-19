@@ -8,56 +8,62 @@ from datetime import datetime
 # 1. הגדרות תצורה
 # ==========================================
 st.set_page_config(
-    page_title="Prompt Engineer Pro V14",
+    page_title="Prompt Engineer Pro V15",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. תיקון עיצוב סופי (Final Layout Fix)
+# 2. עיצוב (Layout Fix)
 # ==========================================
 st.markdown("""
     <style>
-        /* --- הגדרות בסיס (Llayout) --- */
-        /* משאירים את כיוון האתר הכללי LTR כדי לא לשבור את המבנה */
+        /* --- הגדרות בסיס --- */
         .stApp { 
             direction: ltr; 
             background-color: #FAFAFA; 
         }
         
-        /* --- צבעים וטקסט (Content Only) --- */
-        /* הופכים ל-RTL רק את האלמנטים שמכילים טקסט בפועל */
-        .stMarkdown, .stText, h1, h2, h3, h4, h5, h6, p, .element-container {
-            direction: rtl !important;
-            text-align: right !important;
+        /* --- מניעת חיתוך בצדדים --- */
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100%;
+        }
+
+        /* --- עיצוב טקסטים (כהה ויישור לימין) --- */
+        .stMarkdown, h1, h2, h3, h4, h5, h6, p, div, span {
             color: #212121 !important;
+            direction: rtl; 
+            text-align: right;
+            word-wrap: break-word;
         }
-
+        
+        /* --- כותרת ראשית ממוקמת במרכז --- */
+        h1 {
+            text-align: center !important;
+        }
+        
         /* --- שדות קלט --- */
-        /* מיישרים את הטקסט בתוך השדות, בלי לשבור את המסגרת שלהם */
         .stTextInput input, .stTextArea textarea { 
-            direction: rtl !important; 
-            text-align: right !important; 
-            color: #000000 !important;
+            direction: rtl; 
+            text-align: right; 
             background-color: #FFFFFF !important;
-        }
-        
-        /* --- תפריטים נפתחים --- */
-        .stSelectbox div[data-baseweb="select"] > div {
-            direction: rtl !important;
-            text-align: right !important;
             color: #000000 !important;
+            border: 1px solid #ccc;
+            border-radius: 8px;
         }
         
-        /* --- סרגל צד (תוכן בלבד) --- */
-        section[data-testid="stSidebar"] .stMarkdown, 
-        section[data-testid="stSidebar"] h1, 
-        section[data-testid="stSidebar"] p {
-            direction: rtl !important;
-            text-align: right !important;
+        /* --- סרגל צד --- */
+        section[data-testid="stSidebar"] > div { 
+            direction: rtl; 
+            text-align: right; 
+            background-color: #F0F2F6;
         }
-
+        
         /* --- כפתור --- */
         .stButton button { 
             width: 100%; 
@@ -69,10 +75,7 @@ st.markdown("""
             border: none;
         }
         
-        /* --- הסתרת רכיבי מערכת מיותרים --- */
-        #MainMenu {visibility: hidden;} 
-        footer {visibility: hidden;} 
-        header {visibility: hidden;}
+        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -93,7 +96,7 @@ def add_to_history(original_request, refined_prompt, model_rec, used_model):
     })
 
 # ==========================================
-# 4. לוגיקה עסקית
+# 4. לוגיקה עסקית + בחירת מודל חכמה (החזרנו את זה!)
 # ==========================================
 CONTEXT_LOGIC = {
     "שיווק וקופירייטינג": "Expert Copywriter. Focus: Psychology, Virality.",
@@ -125,7 +128,34 @@ def get_api_key():
     except: return ""
 
 def get_working_model():
-    return 'gemini-1.5-flash'
+    """
+    פונקציה חכמה שבודקת איזה מודל באמת קיים בחשבון
+    ולא מנחשת שמות. (שוחזר מגרסה V11)
+    """
+    try:
+        # 1. בקשת רשימת המודלים מהשרת
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        # 2. חיפוש לפי סדר עדיפויות
+        # עדיפות ראשונה: פלאש 1.5 (מהיר וזול)
+        for m in models:
+            if 'gemini-1.5-flash' in m: return m
+            
+        # עדיפות שניה: פרו 1.5 (חזק)
+        for m in models:
+            if 'gemini-1.5-pro' in m: return m
+            
+        # עדיפות שלישית: פרו רגיל (ישן וטוב)
+        for m in models:
+            if 'gemini-pro' in m: return m
+            
+        # אם לא מצאנו כלום מהמוכרים, נחזיר את הראשון ברשימה
+        if models:
+            return models[0]
+            
+        return 'gemini-1.5-flash' # ברירת מחדל למקרה קיצון
+    except:
+        return 'gemini-pro' # Fallback אחרון בהחלט
 
 def clean_response(text):
     return text.replace("undefined", "").replace("null", "").strip()
@@ -133,6 +163,8 @@ def clean_response(text):
 def generate_smart_prompt(api_key, raw_input, context_key, tone):
     try:
         genai.configure(api_key=api_key.strip())
+        
+        # שימוש בפונקציה החכמה במקום שם קבוע
         model_name = get_working_model()
         model = genai.GenerativeModel(model_name)
         
@@ -180,8 +212,8 @@ with st.sidebar:
             st.text(f"🕒 {item['time']}")
             st.code(item['prompt'][:40] + "...", language="markdown")
 
-# כותרת ממורכזת כדי לא להיחתך במובייל
-st.markdown("<h1 style='text-align: center;'>Prompt Pro V14 🧠</h1>", unsafe_allow_html=True)
+# כותרת ממורכזת
+st.markdown("<h1 style='text-align: center;'>Prompt Pro V15 🧠</h1>", unsafe_allow_html=True)
 st.markdown("<h5 style='text-align: center;'>מחולל פרומפטים חכם</h5>", unsafe_allow_html=True)
 
 user_input = st.text_area("מה המשימה שלך?", height=100, placeholder="למשל: פוסט לינקדאין על AI...")
@@ -208,6 +240,7 @@ if st.button("צור פרומפט מנצח 🚀"):
             st.warning("⚠️ עומס רגעי. נסה שוב עוד רגע.")
         elif "Error" in result:
             st.error(f"שגיאה: {result}")
+            st.info("נסה ליצור מפתח API חדש ב-Google AI Studio אם זה נמשך.")
         else:
             parts = result.split("---DIVIDER---")
             prompt_content = parts[1] if len(parts) > 1 else result
